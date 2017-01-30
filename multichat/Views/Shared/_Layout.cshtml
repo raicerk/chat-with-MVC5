@@ -7,6 +7,18 @@
     <title>@ViewBag.Title - Mi aplicación ASP.NET</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    <script type = 'text/javascript' >
+        var appInsights=window.appInsights||function(config)
+        {
+            function r(config){ t[config] = function(){ var i = arguments; t.queue.push(function(){ t[config].apply(t, i)})} }
+            var t = { config:config},u=document,e=window,o='script',s=u.createElement(o),i,f;for(s.src=config.url||'//az416426.vo.msecnd.net/scripts/a/ai.0.js',u.getElementsByTagName(o)[0].parentNode.appendChild(s),t.cookie=u.cookie,t.queue=[],i=['Event','Exception','Metric','PageView','Trace','Ajax'];i.length;)r('track'+i.pop());return r('setAuthenticatedUserContext'),r('clearAuthenticatedUserContext'),config.disableExceptionTracking||(i='onerror',r('_'+i),f=e[i],e[i]=function(config, r, u, e, o) { var s = f && f(config, r, u, e, o); return s !== !0 && t['_' + i](config, r, u, e, o),s}),t
+        }({
+            instrumentationKey:'e7e1bb76-ad4a-4eab-853c-0376e7367fcd'
+        });
+        
+        window.appInsights=appInsights;
+        appInsights.trackPageView();
+    </script>
 </head>
 <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -39,5 +51,49 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
+    <script src="~/Scripts/jquery.signalR-2.1.2.js"></script>
+    <script src="~/signalr/hubs"></script>
+    <script>
+
+        function seleccionar(id) {
+            $("#seleccionado").val(id);
+        }
+
+        $(function () {
+            var chat = $.connection.chatHub;
+            var username;
+            var nombre;
+            do {
+                username = prompt("Ingrese su correo: ");
+                nombre = prompt("Ingrese su nombre: ");
+            } while (username == null || username == "");
+
+            chat.client.updateUsers = function (userCount, userList, UserId) {
+                $('#onlineUsersCount').text('Online users: ' + userCount);
+                $('#userList').empty();
+                userList.forEach(function (o) {
+                    $('#userList').append('<li>' + o.Username + '<button onclick=\'seleccionar("'+o.ID+'")\'>seleccionar</button></li>');
+                });
+            }
+
+            chat.client.broadcastMessage = function (username,idUsuarioRespuesta, message) {
+                $('#messagesArea').append('<li><strong>' + username + '</strong>: ' + message);
+                $("#seleccionado").val(idUsuarioRespuesta);
+            }
+
+            $.connection.hub.start().done(function () {
+                chat.server.connect(username,nombre);
+            });
+
+            $('#btnSendMessage').click(function () {
+                var message = $('#userMessage').val();
+                var usuario = $("#seleccionado").val();
+                chat.server.send(usuario,message);
+                $('#userMessage').val("");
+            });
+        });
+
+    </script>
+
 </body>
 </html>
